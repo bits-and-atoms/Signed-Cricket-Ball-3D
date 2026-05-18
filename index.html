@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3D Ball Viewer</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
+    </script>
+
+    <style>
+        :root {
+            --bg-1: #0a0a0a;
+            --bg-2: #1b1d1a;
+            --panel: rgba(16, 18, 17, 0.85);
+            --panel-strong: rgba(20, 22, 21, 0.95);
+            --accent: #e6b65c;
+            --accent-strong: #f0cd7a;
+            --text: #f6f4ef;
+            --muted: #b8b2a6;
+            --ring: rgba(240, 205, 122, 0.45);
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+            color: var(--text);
+            background: radial-gradient(1200px 600px at 20% 10%, #1f231f 0%, #0a0a0a 55%), linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page {
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        header {
+            padding: 20px 28px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .title-block h1 {
+            margin: 0;
+            font-size: clamp(20px, 2.2vw, 28px);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .title-block p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(230, 182, 92, 0.12);
+            border: 1px solid rgba(230, 182, 92, 0.35);
+            color: var(--accent-strong);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 280px;
+            gap: 20px;
+            padding: 0 28px 20px;
+            align-items: stretch;
+            min-height: 0;
+        }
+
+        .viewer-shell {
+            background: var(--panel);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            animation: fadeUp 600ms ease both;
+        }
+
+        .viewer-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(10, 12, 11, 0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        .viewer-header span {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        model-viewer {
+            width: 100%;
+            flex: 1;
+            background: radial-gradient(circle at 50% 20%, #2a2e2a 0%, #151815 65%, #0d0f0e 100%);
+        }
+
+        .side-panel {
+            background: var(--panel-strong);
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 18px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            animation: fadeUp 700ms ease both;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        .selection {
+            display: grid;
+            gap: 12px;
+        }
+
+        .model-btn {
+            padding: 12px 16px;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+            transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+        }
+
+        .model-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .model-btn.active {
+            background: linear-gradient(135deg, rgba(230, 182, 92, 0.2), rgba(230, 182, 92, 0.05));
+            border-color: rgba(230, 182, 92, 0.6);
+            box-shadow: 0 0 0 2px var(--ring);
+        }
+
+        .helper {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .controls {
+            height: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 28px 22px;
+        }
+
+        .status {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 900px) {
+            body {
+                overflow: auto;
+            }
+
+            .page {
+                height: auto;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 18px 20px 10px;
+            }
+
+            .badge {
+                align-self: flex-start;
+            }
+
+            main {
+                grid-template-columns: 1fr;
+                padding: 0 20px 16px;
+            }
+
+            .viewer-shell {
+                min-height: 320px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 12px 20px 20px;
+            }
+
+            .status {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+
+        <header>
+            <div class="title-block">
+                <h1>Signed Cricket Ball Viewer</h1>
+                <p>Inspect the scan, rotate freely, and compare finishes.</p>
+            </div>
+            <div class="badge">3D Scan</div>
+        </header>
+
+        <main>
+            <section class="viewer-shell">
+                <div class="viewer-header">
+                    <span>Drag to orbit. Scroll to zoom.</span>
+                    <span id="model-label">White Ball</span>
+                </div>
+
+                <model-viewer id="viewer" src="WhiteBall.glb" alt="3D Ball" auto-rotate camera-controls
+                    shadow-intensity="1" exposure="1" environment-image="neutral" ar>
+                </model-viewer>
+            </section>
+
+            <aside class="side-panel">
+                <div class="panel-title">Choose finish</div>
+                <div class="selection">
+                    <button class="model-btn active" data-model="WhiteBall.glb" data-label="White Ball" type="button">
+                        White Ball
+                    </button>
+                    <button class="model-btn" data-model="RedBall.glb" data-label="Red Ball" type="button">
+                        Red Ball
+                    </button>
+                </div>
+                <div class="panel-title">Tips</div>
+                <p class="helper">Use two fingers on mobile to orbit. Tap and drag to explore the signature depth.</p>
+            </aside>
+        </main>
+
+        <div class="controls">
+            <div class="status" id="status">Showing: White Ball</div>
+            <div class="cta">Auto-rotate is on</div>
+        </div>
+
+    </div>
+
+    <script>
+        const viewer = document.getElementById('viewer');
+        const modelLabel = document.getElementById('model-label');
+        const status = document.getElementById('status');
+        const modelButtons = document.querySelectorAll('.model-btn');
+
+        function loadModel(modelName, label) {
+            viewer.src = modelName;
+            modelLabel.textContent = label;
+            status.textContent = `Showing: ${label}`;
+            modelButtons.forEach((button) => {
+                button.classList.toggle('active', button.dataset.model === modelName);
+            });
+        }
+
+        modelButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                loadModel(button.dataset.model, button.dataset.label);
+            });
+        });
+    </script>
+
+</body>
+
+</html>
